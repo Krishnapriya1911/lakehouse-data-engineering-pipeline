@@ -1,0 +1,119 @@
+# ==============================================================
+# LAKEHOUSE PIPELINE — APPLICATION CONFIGURATION
+# ==============================================================
+# This file contains NON-SECRET configuration only.
+#
+# NEVER put passwords, API keys, tokens, or connection strings
+# containing credentials in this file.
+#
+# Required environment variables (set in your environment):
+# --------------------------------------------------------
+#   LAKEHOUSE_BASE_PATH      Databricks Unity Catalog Volume root path
+#                            e.g. /Volumes/my-catalog/my-schema/my-volume
+#
+#   SNOWFLAKE_ACCOUNT_URL    e.g. xy12345.snowflakecomputing.com
+#   SNOWFLAKE_USER           Your Snowflake username
+#   SNOWFLAKE_PASSWORD       Your Snowflake password
+#
+# Optional overrides (defaults shown below are used if not set):
+# --------------------------------------------------------
+#   SNOWFLAKE_DATABASE       default: LAKEHOUSE_DB
+#   SNOWFLAKE_SCHEMA         default: ANALYTICS
+#   SNOWFLAKE_WAREHOUSE      default: LAKEHOUSE_WH
+#   SNOWFLAKE_ROLE           default: ACCOUNTADMIN
+#
+# In Databricks:
+#   Set environment variables via:
+#     Cluster > Edit > Advanced Options > Environment Variables
+#   Or use Databricks Secrets for sensitive values (recommended).
+# ==============================================================
+
+
+# ----------------------------------------------------------
+# Databricks Unity Catalog Volume paths
+# Override the base path with the LAKEHOUSE_BASE_PATH env var.
+# All other paths are relative to that root.
+# ----------------------------------------------------------
+paths:
+  # Base Unity Catalog Volume root — MUST be set via LAKEHOUSE_BASE_PATH env var
+  base_volume: "/Volumes/your-catalog/your-schema/your-volume"
+
+  # Sub-paths (relative to base_volume)
+  raw:         ""                        # raw JSON files live at the Volume root
+  bronze:      "/bronze"
+  silver:      "/silver"
+  gold:        "/gold"
+  streaming:   "/streaming_orders"
+  checkpoints: "/checkpoints/orders_stream"
+
+
+# ----------------------------------------------------------
+# Source data files (filenames, relative to base_volume root)
+# ----------------------------------------------------------
+data:
+  customers_file: "customers.json"
+  orders_file:    "orders.json"
+
+
+# ----------------------------------------------------------
+# Snowflake — NON-SECRET settings only.
+# Account URL, username, and password MUST come from env vars.
+# ----------------------------------------------------------
+snowflake:
+  database:  "LAKEHOUSE_DB"
+  schema:    "ANALYTICS"
+  warehouse: "LAKEHOUSE_WH"
+  role:      "ACCOUNTADMIN"
+
+  tables:
+    top_customers:      "TOP_CUSTOMERS"
+    daily_revenue:      "DAILY_REVENUE"
+    revenue_by_country: "REVENUE_BY_COUNTRY"
+    connection_test:    "CONNECTION_TEST"
+
+
+# ----------------------------------------------------------
+# Data generation settings (used by src/utils/data_generator.py)
+# ----------------------------------------------------------
+data_generation:
+  num_customers:      10000
+  num_orders:         100000
+  num_duplicate_rows: 500
+  num_null_rows:      300
+  start_date:         "2025-01-01"
+
+  countries:
+    - India
+    - USA
+    - Canada
+    - Germany
+    - UK
+    - Australia
+    - France
+    - Japan
+    - Brazil
+    - Singapore
+
+  order_statuses:
+    - SUCCESS
+    - FAILED
+    - PENDING
+
+  status_weights:
+    SUCCESS: 0.85
+    FAILED:  0.10
+    PENDING: 0.05
+
+
+# ----------------------------------------------------------
+# Pipeline orchestration
+# ----------------------------------------------------------
+orchestration:
+  notebook_timeout_seconds: 600
+  notebook_sequence:
+    - schema_setup
+    - bronze_pipeline
+    - silver_pipeline
+    - gold_pipeline
+    - snowflake_export
+    - data_quality_checks

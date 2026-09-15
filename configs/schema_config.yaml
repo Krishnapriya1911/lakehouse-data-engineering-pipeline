@@ -1,0 +1,156 @@
+# ==============================================================
+# LAKEHOUSE PIPELINE — SCHEMA CONFIGURATION
+# ==============================================================
+# Defines the expected field schemas for each data layer.
+# These match the PySpark StructType definitions in
+# notebooks/schema_setup.ipynb and the Delta table structures
+# written by the pipeline.
+#
+# Type names correspond to PySpark SQL types:
+#   StringType, LongType, DoubleType, DateType, TimestampType
+# ==============================================================
+
+
+# ----------------------------------------------------------
+# Bronze / Raw layer schemas
+# These are the raw ingested field types from JSON source files.
+# amount is DoubleType (JSON float) — NOT LongType from schema_setup.ipynb
+# which defines the intended type after casting.
+# ----------------------------------------------------------
+orders_raw:
+  description: "Raw orders ingested from orders.json (Bronze layer)"
+  fields:
+    - name: order_id
+      type: LongType
+      nullable: true
+    - name: customer_id
+      type: LongType
+      nullable: true
+    - name: amount
+      type: DoubleType
+      nullable: true
+    - name: order_time
+      type: StringType
+      nullable: true
+    - name: status
+      type: StringType
+      nullable: true
+
+customers_raw:
+  description: "Raw customers ingested from customers.json (Bronze layer)"
+  fields:
+    - name: customer_id
+      type: LongType
+      nullable: true
+    - name: name
+      type: StringType
+      nullable: true
+    - name: country
+      type: StringType
+      nullable: true
+
+
+# ----------------------------------------------------------
+# Silver layer schemas
+# After cleaning: nulls removed, deduped, types cast, date derived.
+# ----------------------------------------------------------
+orders_clean:
+  description: "Cleaned and validated orders (Silver layer)"
+  fields:
+    - name: order_id
+      type: LongType
+      nullable: false
+    - name: customer_id
+      type: LongType
+      nullable: false
+    - name: amount
+      type: DoubleType
+      nullable: false
+    - name: order_time
+      type: StringType
+      nullable: true
+    - name: status
+      type: StringType
+      nullable: true
+    - name: order_date
+      type: DateType
+      nullable: true
+  partition_by:
+    - order_date
+
+customers_clean:
+  description: "Customers passthrough (Silver layer — no additional cleaning)"
+  fields:
+    - name: customer_id
+      type: LongType
+      nullable: false
+    - name: name
+      type: StringType
+      nullable: true
+    - name: country
+      type: StringType
+      nullable: true
+
+
+# ----------------------------------------------------------
+# Gold layer schemas
+# Business aggregations derived from Silver data.
+# ----------------------------------------------------------
+top_customers:
+  description: "Top customers by total spend (Gold layer)"
+  fields:
+    - name: name
+      type: StringType
+      nullable: true
+    - name: total_spent
+      type: DoubleType
+      nullable: true
+  sort_by: total_spent
+  sort_order: desc
+
+daily_revenue:
+  description: "Aggregated revenue by order date (Gold layer)"
+  fields:
+    - name: order_date
+      type: DateType
+      nullable: true
+    - name: daily_revenue
+      type: DoubleType
+      nullable: true
+  sort_by: order_date
+  sort_order: asc
+
+revenue_by_country:
+  description: "Total revenue grouped by customer country (Gold layer)"
+  fields:
+    - name: country
+      type: StringType
+      nullable: true
+    - name: total_revenue
+      type: DoubleType
+      nullable: true
+  sort_by: total_revenue
+  sort_order: desc
+
+
+# ----------------------------------------------------------
+# Streaming schema (used by kafka_streaming_pipeline.ipynb)
+# ----------------------------------------------------------
+streaming_orders:
+  description: "Order events schema for Structured Streaming ingestion"
+  fields:
+    - name: order_id
+      type: LongType
+      nullable: true
+    - name: customer_id
+      type: LongType
+      nullable: true
+    - name: amount
+      type: DoubleType
+      nullable: true
+    - name: status
+      type: StringType
+      nullable: true
+    - name: order_time
+      type: StringType
+      nullable: true

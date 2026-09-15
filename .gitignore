@@ -1,0 +1,17 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+logs/
+temp/
+*.log
+.DS_Store
+.ipynb_checkpoints/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Databricks
+.databricks/

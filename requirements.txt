@@ -1,0 +1,10 @@
+pyspark==3.5.0
+delta-spark==3.1.0
+snowflake-connector-python==3.10.1
+kafka-python==2.0.2
+simplejson==3.19.2
+pandas==2.2.2
+numpy==1.26.4
+faker==24.11.0          # used by src/utils/data_generator.py
+pyyaml==6.0.1           # for reading configs/app_config.yaml
+python-dotenv==1.0.1    # for loading .env files locally during development
