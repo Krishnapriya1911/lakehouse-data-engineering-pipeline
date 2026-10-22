@@ -30,6 +30,20 @@ The repository includes small example datasets and CSV outputs for review:
 
 These files illustrate the data shapes and outputs; they are not a throughput benchmark or evidence of a running cloud deployment.
 
+## Run the local reference demonstration
+
+No cloud credentials or third-party Python packages are required:
+
+```bash
+python3 scripts/run_local_demo.py
+python3 -m unittest discover -s tests -v
+python3 -m http.server 8080 --directory artifacts/local-demo
+```
+
+Open `http://localhost:8080` to explore generated revenue charts, quality counts and CSV downloads. This separate SQLite reference follows the batch notebook rules; it does not execute Spark, Delta Lake, Kafka or Snowflake. Conflicting duplicate order IDs keep the first source row deterministically. The original notebook's distributed deduplication can choose a different row for conflicting duplicates.
+
+The runner reads the committed raw JSON and writes only under `artifacts/local-demo/`. The small CSVs already in `data/bronze`, `data/silver` and `data/gold` are separate illustrative fixtures, not exports of this larger raw dataset.
+
 ## Run the batch pipeline in Databricks
 
 ### Prerequisites
