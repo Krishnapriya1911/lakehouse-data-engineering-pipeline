@@ -1,295 +1,96 @@
-# End-to-End Lakehouse Data Engineering Pipeline
+# Lakehouse Data Engineering Pipeline
 
-## Project Overview
+A portfolio implementation of batch and streaming data pipelines using **Python, PySpark, Delta Lake, Databricks, Kafka and Snowflake**. Customer and order data move through Bronze, Silver and Gold layers to produce analytics tables, with separate quality and reconciliation notebooks.
 
-This project demonstrates a complete modern data engineering pipeline built using:
+[Architecture](docs/architecture.md) · [Data flow](docs/data_flow.md) · [Batch notebooks](notebooks) · [Sample outputs](data/gold)
 
-- Databricks
-- PySpark
-- Delta Lake
-- Snowflake
-- Kafka Streaming
-- Medallion Architecture
-- Data Quality Validation
+## What to review
 
-The pipeline ingests raw transactional JSON data, processes it through Bronze, Silver, and Gold layers, validates data quality, exports curated datasets into Snowflake, and supports both batch and streaming workloads.
+| Engineering area | Implementation |
+| --- | --- |
+| Raw ingestion | [Bronze pipeline](notebooks/bronze_pipeline.ipynb) reads customer and order JSON into Delta tables |
+| Cleaning | [Silver pipeline](notebooks/silver_pipeline.ipynb) normalizes records and removes invalid or duplicate data |
+| Analytics | [Gold pipeline](notebooks/gold_pipeline.ipynb) calculates daily revenue, top customers and revenue by country |
+| Data quality | [Quality notebook](notebooks/data_quality_checks.ipynb) reports null IDs, null amounts, duplicates and negative amounts |
+| Reconciliation | [Reconciliation notebook](notebooks/reconciliation_pipeline.ipynb) compares Bronze and Silver counts with rejected and duplicate records |
+| Streaming | [Local producer](streaming/kafka_producer.py) sends synthetic orders to Kafka; the [Databricks consumer](notebooks/kafka_streaming_consumer.ipynb) parses events and writes Delta with a checkpoint |
+| Warehouse integration | [Snowflake loader](notebooks/snowflake_loader.ipynb) exports Gold tables through the Spark connector |
+| Orchestration | [Orchestration notebook](notebooks/pipeline_orchestration.ipynb) runs the batch notebook sequence |
 
-This project simulates a production-grade cloud data engineering workflow aligned with real-world enterprise data platforms.
+The streaming consumer uses an `availableNow` trigger: it processes available events and exits.
 
----
+## Inspect without cloud credentials
 
-# Architecture
+The repository includes small example datasets and CSV outputs for review:
 
-```text
-Raw JSON Data
-      ↓
-Bronze Layer (Raw Ingestion)
-      ↓
-Silver Layer (Cleaning & Validation)
-      ↓
-Gold Layer (Business Aggregations)
-      ↓
-Snowflake Data Warehouse
-      ↓
-Analytics / Reporting
-```
+- [Raw customers](data/raw/customers.json) and [raw orders](data/raw/orders.json)
+- [Daily revenue](data/gold/daily_revenue.csv)
+- [Top customers](data/gold/top_customers.csv)
+- [Revenue by country](data/gold/revenue_by_country.csv)
 
----
+These files illustrate the data shapes and outputs; they are not a throughput benchmark or evidence of a running cloud deployment.
 
-# Tech Stack
+## Run the batch pipeline in Databricks
 
-| Technology | Purpose |
-|---|---|
-| Databricks | Data Engineering Platform |
-| PySpark | Distributed Data Processing |
-| Delta Lake | ACID Storage Layer |
-| Snowflake | Cloud Data Warehouse |
-| Kafka | Real-Time Streaming |
-| Python | ETL Development |
-| SQL | Analytics & Validation |
-| GitHub | Version Control |
+### Prerequisites
 
----
-
-# Project Structure
-
-```text
-lakehouse-pipeline/
-│
-├── configs/
-├── dashboards/
-├── data/
-│   ├── bronze/
-│   ├── silver/
-│   ├── gold/
-│   ├── raw/
-│   └── warehouse/
-│
-├── docs/
-├── monitoring/
-├── notebooks/
-├── reconciliation/
-├── screenshots/
-├── src/
-│   └── utils/
-│
-├── streaming/
-├── README.md
-├── requirements.txt
-└── .gitignore
-```
-
----
-
-# Pipeline Stages
-
-## 1. Schema Setup
-
-Creates Delta Lake storage structure and initializes the Medallion Architecture folders.
-
-### Key Features
-- Folder initialization
-- Delta storage preparation
-- Warehouse setup
-
----
-
-## 2. Bronze Layer Pipeline
-
-Loads raw JSON data into Delta Bronze tables.
-
-### Key Features
-- Raw ingestion
-- Schema inference
-- Delta table creation
-- Initial storage optimization
-
-### Inputs
-- customers.json
-- orders.json
-
-### Outputs
-- bronze/customers
-- bronze/orders
-
----
-
-## 3. Silver Layer Pipeline
-
-Cleans and transforms Bronze data into validated Silver tables.
-
-### Key Features
-- Null handling
-- Deduplication
-- Invalid record filtering
-- Data type standardization
-
-### Outputs
-- silver/customers_clean
-- silver/orders_clean
-
----
-
-## 4. Gold Layer Pipeline
-
-Builds analytical business datasets from Silver data.
-
-### Key Features
-- Revenue aggregation
-- Customer analytics
-- Business KPI generation
-
-### Gold Tables
-- TOP_CUSTOMERS
-- DAILY_REVENUE
-- REVENUE_BY_COUNTRY
-
----
-
-## 5. Snowflake Export
-
-Exports curated Gold tables into Snowflake for analytics and reporting.
-
-### Key Features
-- Snowflake integration
-- Table overwrite
-- Data warehouse loading
-
----
-
-## 6. Kafka Streaming Pipeline
-
-Implements real-time streaming ingestion using Kafka and Structured Streaming.
-
-### Key Features
-- Streaming ingestion
-- Checkpointing
-- Incremental processing
-- Delta sink
-
----
-
-## 7. Data Quality Checks
-
-Validates data integrity before downstream consumption.
-
-### Checks Performed
-- Null customer IDs
-- Duplicate orders
-- Negative revenue validation
-- Null amount checks
-
-### Example Output
-
-```text
-DATA QUALITY PASSED
-```
-
----
-
-# Sample Business Metrics
-
-## Top Customers
-
-Tracks highest spending customers across all successful transactions.
-
-## Daily Revenue
-
-Provides aggregated revenue by transaction date.
-
-## Revenue by Country
-
-Provides geographic revenue distribution for analytics.
-
----
-
-# Screenshots
-
-## Workflow Execution
-
-![Workflow](screenshots/workflow_execution.png)
-
-## Snowflake Tables
-
-![Snowflake](screenshots/snowflake_tables.png)
-
-## Kafka Streaming
-
-![Kafka](screenshots/kafka_streaming.png)
-
-## Data Quality Checks
-
-![Quality](screenshots/data_quality_pass.png)
-
----
-
-# How to Run
-
-## 1. Clone Repository
+- A Databricks workspace with Spark, Delta Lake and access to a Unity Catalog Volume.
+- Permission to read and write a dedicated demo Volume.
+- Snowflake access and a compatible Snowflake Spark connector for the warehouse export steps.
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/lakehouse-pipeline.git
-cd lakehouse-pipeline
+git clone https://github.com/Krishnapriya1911/lakehouse-data-engineering-pipeline.git
+cd lakehouse-data-engineering-pipeline
 ```
 
----
+1. Import the notebooks from `notebooks/` into Databricks.
+2. Upload `data/raw/customers.json` and `data/raw/orders.json` into your demo Volume root.
+3. Set each notebook's `base_path` widget to that Volume path. Editing `configs/app_config.yaml` alone does not reconfigure the notebooks.
+4. Run `schema_setup`, `bronze_pipeline`, `silver_pipeline`, then `gold_pipeline`.
+5. Inspect the Gold Delta tables and run `data_quality_checks` and `reconciliation_pipeline` to review the quality reports.
+6. Configure the Snowflake environment variables described in [the configuration reference](configs/app_config.yaml), install the compatible Spark connector, and run `snowflake_loader` or `snowflake_export`.
 
-## 2. Install Dependencies
+Use a demo Volume: the Bronze and Gold notebooks remove or overwrite their output paths when rerun. The orchestration notebook includes Snowflake export, so configure Snowflake before running the full sequence.
+
+## Run the Kafka producer locally
+
+Use a Python virtual environment. The producer imports `confluent_kafka`, which is not currently included in `requirements.txt`, so install it explicitly:
 
 ```bash
-pip install -r requirements.txt
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install confluent-kafka python-dotenv
 ```
 
----
+Create a local `.env` file in the repository root with these keys, using your own Kafka credentials:
 
-## 3. Execute Pipelines
+```dotenv
+KAFKA_BOOTSTRAP_SERVERS=
+KAFKA_API_KEY=
+KAFKA_API_SECRET=
+KAFKA_TOPIC=orders
+```
 
-Run notebooks in this order:
+```bash
+python streaming/kafka_producer.py
+```
 
-1. schema_setup
-2. bronze_pipeline
-3. silver_pipeline
-4. gold_pipeline
-5. snowflake_export
-6. kafka_streaming_pipeline
-7. data_quality_checks
+In Databricks, open `notebooks/kafka_streaming_consumer.ipynb`, configure the Kafka widgets, and update its output and checkpoint paths to your demo Volume before running. Use a Kafka-enabled runtime and keep credentials out of committed notebooks and output cells.
 
----
+`streaming/streaming_pipeline.py` is a pointer to the Databricks consumer. Installing `requirements.txt` locally does not provide Databricks' `dbutils` or configure its cloud services.
 
-# Key Data Engineering Concepts Demonstrated
+## Repository guide
 
-- Medallion Architecture
-- Batch ETL Pipelines
-- Streaming ETL Pipelines
-- Delta Lake
-- Data Quality Validation
-- Snowflake Integration
-- Workflow Orchestration
-- Distributed Processing
-- Cloud Data Warehousing
+| Directory | Contents |
+| --- | --- |
+| `notebooks/` | Databricks ingestion, transformation, streaming and validation notebooks |
+| `streaming/` | Local Kafka producer and consumer entry-point notes |
+| `src/utils/` | Data generation and quality helpers |
+| `configs/` | Schema and non-secret configuration references |
+| `data/` | Example raw data and exported layer outputs |
+| `monitoring/` | Monitoring helper |
+| `docs/` | Architecture and data-flow documentation |
 
----
+## Current scope and next steps
 
-# Resume-Relevant Skills
-
-- PySpark
-- Databricks
-- Delta Lake
-- Kafka
-- Snowflake
-- SQL
-- Data Engineering
-- ETL Pipelines
-- Big Data Processing
-- Workflow Automation
-
----
-
-# Future Enhancements
-
-- CI/CD integration
-- Airflow orchestration
-- dbt transformations
-- Real-time dashboards
-- Monitoring & alerting
-- Unity Catalog integration
+This is a learning and portfolio project. Cloud execution requires the accounts and configuration above. Next improvements include reproducible local execution, automated assertions for quality failures, configurable streaming paths, and CI validation. Performance, availability and anomaly-detection results have not been benchmarked here.
