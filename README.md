@@ -1,5 +1,7 @@
 # Lakehouse Data Engineering Pipeline
 
+**[Open the live batch explorer](https://lakehouse-pipeline-explorer.krishnapriyakella07.chatgpt.site)** — synthetic reference outputs, quality counts and revenue charts. This demo does not host the full streaming/cloud stack.
+
 A portfolio implementation of batch and streaming data pipelines using **Python, PySpark, Delta Lake, Databricks, Kafka and Snowflake**. Customer and order data move through Bronze, Silver and Gold layers to produce analytics tables, with separate quality and reconciliation notebooks.
 
 [Architecture](docs/architecture.md) · [Data flow](docs/data_flow.md) · [Batch notebooks](notebooks) · [Sample outputs](data/gold)
