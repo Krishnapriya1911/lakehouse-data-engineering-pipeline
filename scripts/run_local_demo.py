@@ -95,7 +95,12 @@ def run(raw_dir: Path, output_dir: Path) -> dict:
                 writer.writerow(column[0] for column in cursor.description)
                 writer.writerows(cursor.fetchall())
         (output_dir / "summary.json").write_text(json.dumps(report, indent=2) + "\n")
-        shutil.copyfile(ROOT / "demo" / "index.html", output_dir / "index.html")
+        for asset in (ROOT / "demo").iterdir():
+            destination = output_dir / asset.name
+            if asset.is_dir():
+                shutil.copytree(asset, destination, dirs_exist_ok=True)
+            else:
+                shutil.copyfile(asset, destination)
         return report
     finally:
         db.close()

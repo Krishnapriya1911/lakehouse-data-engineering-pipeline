@@ -42,6 +42,8 @@ class BatchReferenceTests(unittest.TestCase):
             self.assertEqual(exported, [{"order_date": "2026-01-01", "daily_revenue": "30.0"}])
             self.assertEqual((raw / "orders.json").read_text(), source)
             self.assertTrue((output / "index.html").is_file())
+            for asset in ["style.css", "app.js", "assets/inter-regular.woff2", "assets/sora-semibold.woff2"]:
+                self.assertGreater((output / asset).stat().st_size, 0)
 
     def test_unmatched_customer_is_visible_in_audit(self):
         with tempfile.TemporaryDirectory() as directory:
